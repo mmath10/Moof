@@ -31,9 +31,11 @@ tokens :-
     "-"$digit+                         { mkT T_Integer }
     \" .* \"                           { mkT T_String }
     ":"	  			       { mkT T_Colon }
-    "\n"			       { mkT T_Newline }
     ";"				       { mkT T_SemiColon }
-    $white                             ;  
+    "\n"			       { mkT T_Newline }
+    " "                                { mkT T_Space }
+    "\t"			       { mkT T_Tab }
+    
 {
 
 -- The token type:
@@ -63,7 +65,7 @@ data Token = Token {
        tokenAlxPos::AlexPosn
      , tokenText::String 
      , tokenType::TokType      
-}  deriving (Eq,Show)
+}  deriving (Eq, Show)
 
 mkT t p s = Token p s t
 
