@@ -1,8 +1,9 @@
 {
-module Moof_Lexer where
+module MoofLexer where
 }
 
 %wrapper "posn"
+
 
 $digit = 0-9    
 $alpha = [a-zA-Z]                              
@@ -16,7 +17,6 @@ tokens :-
     "//".*                             ;
     "True"                             { mkT T_Bool }
     "False"                            { mkT T_Bool }
-    "struct"			       { mkT T_Struc }
     "if"                               { mkT T_If }
     "else"                             { mkT T_Else}
     "elif"                             { mkT T_Elif }
@@ -31,8 +31,9 @@ tokens :-
     "-"$digit+                         { mkT T_Integer }
     \" .* \"                           { mkT T_String }
     ":"	  			       { mkT T_Colon }
+    "\n"			       { mkT T_Newline }
+    ";"				       { mkT T_SemiColon }
     $white                             ;  
-     
 {
 
 -- The token type:
@@ -43,7 +44,6 @@ data TokType =
      T_Assignment      |
      T_Integer	       |
      T_Bool            |
-     T_Struct 	       |
      T_If              |
      T_Elif            |
      T_Else            |
@@ -52,19 +52,32 @@ data TokType =
      T_String          |
      T_LIndent         |
      T_RIndent         |
-     T_Comma           
+     T_Comma           |
+     T_Newline	       |
+     T_Colon	       |
+     T_SemiColon       |
+     T_ERROR
            deriving (Eq,Show)	
 
-data Token = Token AlexPosn String TokType
-    deriving (Eq,Show)
+data Token = Token { 
+       tokenAlxPos::AlexPosn
+     , tokenText::String 
+     , tokenType::TokType      
+}  deriving (Eq,Show)
 
 mkT t p s = Token p s t
 
-getTokLine (Token (AlexPn _ ln _) _) = ln
-getTokCol (Token (AlexPn _ _ col) _) = col
-getTok (Token _ t) = t
-getPosn (Token p _) = p
+tokLine (Token (AlexPn _ lin _) _ _) = lin
+tokCol (Token (AlexPn _ _ col) _ _) = col
+tokPos (Token (AlexPn pos _ _) _ _) = pos
 
-
+moofScanTokens :: String -> [Token]
+moofScanTokens str = go (alexStartPos,'\n',[],str)
+  where go inp@(pos,_,_,str) =
+          case alexScan inp 0 of
+                AlexEOF -> []
+                AlexError (pos, prev_char, _, ipStr) -> [Token pos ipStr T_ERROR]
+                AlexSkip  inp' len     -> go inp'
+                AlexToken inp' len act -> act pos (take len str) : go inp'
 
 }
