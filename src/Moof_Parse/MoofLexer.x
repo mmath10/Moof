@@ -7,10 +7,6 @@ module MoofLexer where
 
 $digit = 0-9    
 $alpha = [a-zA-Z]                              
-@operators = "*" | "+" | "-"  | "/"  |
-             ">=" | "<=" | "<" | ">" | 
-             "or" | "and" | "xor" | "=="
-
 @booleans = "True" | "False"
 
 tokens :-
@@ -19,30 +15,27 @@ tokens :-
     "False"                            { mkT T_Bool }
     "if"                               { mkT T_If }
     "else"                             { mkT T_Else}
-    "elif"                             { mkT T_Elif }
     "("                                { mkT T_LParen }
-    ")"                                { mkT T_RParen }   
+    ")"                                { mkT T_RParen }
+    "{"   			       { mkT T_LCurly }
+    "}"   			       { mkT T_RCurly }
+    "["                                { mkT T_LBracket }
+    "]"                                { mkT T_RBracket }
     ","                                { mkT T_Comma }
-    @operators                         { mkT T_Operator }
     $alpha [$alpha $digit \_ \']*      { mkT T_Name }
-    [A-Z] [$alpha $digit \_ \']*       { mkT T_TName }
+    [A-Z] [$alpha $digit \_ \']*       { mkT T_Name }
     "="                                { mkT T_Assignment }
     $digit+                            { mkT T_Integer }
     "-"$digit+                         { mkT T_Integer }
     \" .* \"                           { mkT T_String }
-    ":"	  			       { mkT T_Colon }
     ";"				       { mkT T_SemiColon }
-    "\n"			       { mkT T_Newline }
-    " "                                { mkT T_Space }
-    "\t"			       { mkT T_Tab }
+    $white			       ;
     
 {
 
 -- The token type:
 data TokType =     
      T_Name	       |
-     T_TName 	       |
-     T_Operator        |
      T_Assignment      |
      T_Integer	       |
      T_Bool            |
@@ -52,11 +45,11 @@ data TokType =
      T_LParen          |
      T_RParen          |
      T_String          |
-     T_LIndent         |
-     T_RIndent         |
+     T_LCurly	       |
+     T_RCurly	       |
+     T_LBracket	       |
+     T_RBracket	       |
      T_Comma           |
-     T_Newline	       |
-     T_Colon	       |
      T_SemiColon       |
      T_ERROR
            deriving (Eq,Show)	

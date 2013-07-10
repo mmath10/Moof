@@ -10,14 +10,11 @@ import Control.Monad
 %error { parseError }
 
 %token
-  lname    { Token _ _ T_Name }  
-  tname    { Token _ _ T_TName }
-  op       { Token _ _ T_Operator }
+  name    { Token _ _ T_Name }  
   '='      { Token _ _ T_Assignment }
   int      { Token _ _ T_Integer }
   bool     { Token _ _ T_Bool }
   if       { Token _ _ T_If }
-  elif     { Token _ _ T_Elif }
   else     { Token _ _ T_Else } 
   '('      { Token _ _ T_LParen }
   ')'      { Token _ _ T_RParen } 
@@ -26,77 +23,56 @@ import Control.Monad
   ';'      { Token _ _ T_SemiColon }
   '{'      { Token _ _ T_LCurly }
   '}'      { Token _ _ T_RCurly }
+  '['      { Token _ _ T_LBracket }
+  ']'      { Token _ _ T_RBracket }
 
+%nonassoc THEN 
+%nonassoc else
 
 %%
+prog  : {- empty -}                       { [] }
+      | line prog                  	  { $1 : $2 }   
 
-prog :: { [Scope] } 
-prog : {- empty -}                        { [] }
-  | sc_line prog                  	  { $1 : $3 }   
-  | structure ';' prog                    { $1 : $3 }
+scope : line	                          { [$1] }
+      | '{' prog '}'                      { $2 }
 
-    
-structure : tname '{' fieldDec '}'        { Struct $1 $3 }
+line : expr ';'                           { Express $1 }
+     | variableDef ';'                    { $1 }
+     | if '(' expr ')' scope %prec THEN   { If $3 $5 }
+     | if '(' expr ')' scope else scope   { IfE $3 $5 $7 }
 
-block : {- empty -}                       { [] } 
-      | sc_line block            	  { $1 : $3 }
+variableDef : name'=' expr              { Var $1 $3 }
 
-sc_line : variableDef ';'                 { $1 }
- 	| expr ';'    			  { Express $1 }
-	| if_c 				  { $1 }
+expr :  '(' expr ')'                      { $1 }
+     | term                               { $1 }
 
-scope : '{' block '}'                     { $2 }
-      | sc_line	                          { [$1] }
-
-variableDef : lname '=' expr              { Var $1 $3 }
-
-expr : term                               { $1 }
-     | '(' expr ')'                       { $1 }
-     | term op expr                      { Op $1 $2 $3 } 
-
-       
-term : tname '(' ')'                      { SCall $1 [] } 
-     | tname '(' args ')'                 { SCall $1 $3 }
-     | '(' ')' scope                      { FDef [] $5 }
-     | '(' argVar ')' scope               { FDef $2 $5 }	
-     | term '(' args ')'                  { FCall $1 $3 }	
-     | lname                              { Literal $1 }
+term : '(' ')' scope                      { FDef [] $3 }
+     | '(' argVar ')' scope               { FDef $2 $4 }	
+     | expr '(' ')'                       { FCall $1 [] }		
+     | expr '(' args ')'                  { FCall $1 $3 }	
+     | '{' args '}'                       { Tuple $2 } 
+     | expr '[' expr ']'                  { Index $1 $3 }
+     | name                             { Literal $1 }
      | string 				  { Literal $1 }
      | bool 				  { Literal $1 }
      | int 				  { Literal $1 } 
-
-
-fieldDec : {- empty -}                    { [] }
-         | tname ';' fieldDec             { $1 : $3 }
-
-argVar : lname ',' argVar                 { $1 : $3 }
-       | lname 	                          { [$1] }
+     
+argVar : name',' argVar                 { $1 : $3 }
+       | name	                          { [$1] }
         
-args : expr                               { [] }
+args : expr                               { [$1] }
      | expr ',' args                      { $1 : $3 }
 	 
-if_c : if '(' expr ')' scope else_c       { If $2 $4 $6 }
-
-else_c : elif '(' expr ')' scope else_c   { EliF $2 $4 $6 }
-       | else scope                       { Else $3 }
-       | {- empty -}                      { Endif }
-
-
 {
-
-data Scope = Struct Token [Token]
-     	   | Var Token Expr
+data Scope = Var Token Expr
 	   | Express Expr 
-	   | If Expr [Scope] Elif
+           | If Expr [Scope] 
+     	   | IfE Expr [Scope] [Scope]
 
-data Elif = Elif Expr [Scope] Elif 
-     	  | Else [Scope]
-          | Endif
-
-data Expr = SCall Token 
-     	  | Op Expr Token Expr
-	  | FDef [Token] [Scope]
-	  | FCall Token [Expr]
+data Expr = FDef [Token] [Scope]
+	  | FCall Expr [Expr]
+	  | Tuple [Expr]
+	  | Index Expr Expr
 	  | Literal Token
 
 data MoofParse a = MoofError String | MoofParse a

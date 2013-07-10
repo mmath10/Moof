@@ -54,11 +54,11 @@ haveLexErrors = foldr False errorCheck
         
 
 
-tabsToSpaces :: Int -> [Token] -> [Token]
-tabsToSpaces spaces_per_tab = foldr 
-  where 
-    tbsp (Token p _ T_Tab) toks  = 
-      [(Token p " " T_Space) | i <- [1..spaces_per_tab]]
-    tbsp tk toks = tk : toks
+-- tabsToSpaces :: Int -> [Token] -> [Token]
+-- tabsToSpaces spaces_per_tab = foldr 
+--   where 
+--     tbsp (Token p _ T_Tab) toks  = 
+--       [(Token p " " T_Space) | i <- [1..spaces_per_tab]]
+--     tbsp tk toks = tk : toks
     
 
