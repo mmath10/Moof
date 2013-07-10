@@ -1,13 +1,13 @@
 {
+module MoofParse where
 import MoofLexer
-import Control.Monad
 }
-%name moof
+%name moofParse
 
 %tokentype { Token }
 
 
-%monad { MoofParse } { (>>=) } { return }
+%monad { Maybe } { (>>=) } { return }
 %error { parseError }
 
 %token
@@ -65,24 +65,19 @@ args : expr                               { [$1] }
      | expr ',' args                      { $1 : $3 }
 	 
 {
+
 data Scope = Var Token Expr
 	   | Express Expr 
            | If Expr [Scope] 
      	   | IfE Expr [Scope] [Scope]
+  deriving (Show, Eq)
 
 data Expr = FDef [Token] [Scope]
 	  | FCall Expr [Expr]
 	  | Tuple [Expr]
 	  | Index Expr Expr
 	  | Literal Token
+  deriving (Show, Eq)
 
-data MoofParse a = MoofError String | MoofParse a
-
-instance Monad MoofParse where
-  (>>=) (MoofParse a) f = f a
-  (>>=) err _ = err 
-  return = MoofParse
-
-parseError tokens = MoofError "ERROR"
-
+parseError tokens = Nothing
 }
