@@ -1,10 +1,11 @@
 {
-import Char
 import MoofLexer
 import Control.Monad
 }
+%name moof
 
 %tokentype { Token }
+
 
 %monad { MoofParse } { (>>=) } { return }
 %error { parseError }
@@ -43,7 +44,7 @@ line : expr ';'                           { Express $1 }
 
 variableDef : name'=' expr              { Var $1 $3 }
 
-expr :  '(' expr ')'                      { $1 }
+expr :  '(' expr ')'                      { $2 }
      | term                               { $1 }
 
 term : '(' ')' scope                      { FDef [] $3 }
@@ -52,7 +53,7 @@ term : '(' ')' scope                      { FDef [] $3 }
      | expr '(' args ')'                  { FCall $1 $3 }	
      | '{' args '}'                       { Tuple $2 } 
      | expr '[' expr ']'                  { Index $1 $3 }
-     | name                             { Literal $1 }
+     | name                               { Literal $1 }
      | string 				  { Literal $1 }
      | bool 				  { Literal $1 }
      | int 				  { Literal $1 } 
@@ -77,9 +78,9 @@ data Expr = FDef [Token] [Scope]
 
 data MoofParse a = MoofError String | MoofParse a
 
-instance Monad (MoofParse a) where
+instance Monad MoofParse where
   (>>=) (MoofParse a) f = f a
-  (>>=) err = err
+  (>>=) err _ = err 
   return = MoofParse
 
 parseError tokens = MoofError "ERROR"
