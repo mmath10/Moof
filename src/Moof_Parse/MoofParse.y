@@ -7,7 +7,7 @@ import MoofLexer
 %tokentype { Token }
 
 
-%monad { Maybe } { (>>=) } { return }
+%monad { Either String } { (>>=) } { return }
 %error { parseError }
 
 %token
@@ -79,5 +79,5 @@ data Expr = FDef [Token] [Scope]
 	  | Literal Token
   deriving (Show, Eq)
 
-parseError tokens = Nothing
+parseError tokens = Left "Nothing"
 }
