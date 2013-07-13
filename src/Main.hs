@@ -1,4 +1,3 @@
-module Main where 
 import MoofParse
 import MoofLexer
 
