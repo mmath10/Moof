@@ -1,6 +1,6 @@
 {
 module MoofParse where
-import MoofLexer
+import IndentParse
 }
 %name moofParse
 
@@ -70,14 +70,14 @@ data Scope = Var Token Expr
 	   | Express Expr 
            | If Expr [Scope] 
      	   | IfE Expr [Scope] [Scope]
-  deriving (Show, Eq)
+           deriving (Show, Eq)
 
 data Expr = FDef [Token] [Scope]
 	  | FCall Expr [Expr]
 	  | Tuple [Expr]
 	  | Index Expr Expr
 	  | Literal Token
-  deriving (Show, Eq)
+          deriving (Show, Eq)
 
 parseError tokens = Nothing
 }

@@ -1,5 +1,7 @@
 {
 module MoofLexer where
+import System.IO
+import MoofUtils
 }
 
 %wrapper "posn"
@@ -32,6 +34,7 @@ tokens :-
     "\t"			       { mkT T_Tab }
     "\n"			       { mkT T_NewLine }
     "\r"			       { mkT T_NewLine }
+    ":"                                { mkT T_Colon }
     
 {
 
@@ -51,12 +54,13 @@ data TokType =
      T_LCurly	       |
      T_RCurly	       |
      T_Comma           |
+     T_Colon           |
      T_SemiColon       |
      T_White	       |
      T_NewLine	       |
      T_Tab	       |
      T_ERROR
-           deriving (Eq,Show)	
+     deriving (Eq,Show)	
 
 data Token = Token { 
        tokenAlxPos::AlexPosn
@@ -82,26 +86,40 @@ moofScanTokens str = tabsToSpaces space_num (go (alexStartPos,'\n',[],str))
                 AlexToken inp' len act -> act pos (take len str) : go inp'
 
 
-
-reportLexErrors :: [Token] -> IO ()
-reportLexErrors tokens = do 
-  let checkError tk = case tk of 
-        AlexError _ -> True
-        _ -> False
-  mapM_ errorForm tokns
-    where 
-      errorForm (Token (AlexPn _ lin col) ipStr T_ERROR) = do
-        hPutStr stderr ("Unrecognized character: \"" ++ (head ipStr) ++ 
+checkLexErrors :: [Token] -> Either (ErrorReport [Token]) [Token]
+checkLexErrors tks = mapM checkError tks
+  where
+    checkError (Token (AlexPn _ lin col) ipStr T_ERROR) AlexError = 
+      Left ErrorReport {
+        errorMesg = ("Unrecognized character: \"" ++ (show (head ipStr)) ++ 
                         "\" at line: " ++ (show lin) ++ 
                         " at column: " ++ (show col) ++ 
-                        "\n")
-      errorForm _ = return ()
+                        "\n") ,
+        errorData =  tks,
+        funcName = "checkLexErrors",
+        moduleName = "MoofLexer"
+        }
+    checkError tks = Right tks
+
+-- reportLexErrors :: [Token] -> IO ()
+-- reportLexErrors tokens = do 
+--   let checkError tk = case tk of 
+--         AlexError _ -> True
+--         _ -> False
+--   mapM_ errorForm tokens
+--     where 
+--       errorForm (Token (AlexPn _ lin col) ipStr T_ERROR) = do
+--         hPutStr stderr ("Unrecognized character: \"" ++ (show (head ipStr)) ++ 
+--                         "\" at line: " ++ (show lin) ++ 
+--                         " at column: " ++ (show col) ++ 
+--                         "\n")
+--       errorForm _ = return ()
 
 tabsToSpaces :: Int -> [Token] -> [Token]
-tabsToSpaces spaces_per_tab = foldr 
+tabsToSpaces spaces_per_tab = foldr tbsp []
   where 
     tbsp (Token p _ T_Tab) toks  = 
-      [(Token p " " T_Space) | i <- [1..spaces_per_tab]]
+      [(Token p " " T_White) | i <- [1..spaces_per_tab]]
     tbsp tk toks = tk : toks
 
 }

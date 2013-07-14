@@ -2,26 +2,13 @@
 module IndentParse where
 import MoofLexer
 }
-%name IndentParse
+%name indentParse
 
 %tokentype { Token }
-
-
-%monad { Either String } { (>>=) } { return }
+%monad { Either ErrorReport } { (>>=) } { return }
 %error { parseError }
 
 %token
-  tok      { Token _ _ T_Name }  
-  tok      { Token _ _ T_TName }  
-  tok      { Token _ _ T_Assignment }
-  tok      { Token _ _ T_Integer }
-  tok      { Token _ _ T_Bool }
-  tok      { Token _ _ T_String }
-  tok      { Token _ _ T_Comma }
-  tok      { Token _ _ T_If }
-  tok      { Token _ _ T_If }
-  tok      { Token _ _ T_Else } 
-  ':'	   { Token _ _ T_Colon }
   ';'      { Token _ _ T_SemiColon }
   '('      { Token _ _ T_LParen }
   ')'      { Token _ _ T_RParen } 
@@ -29,49 +16,45 @@ import MoofLexer
   '}'      { Token _ _ T_RCurly }
   '\n'     { Token _ _ T_NewLine }
   ' '      { Token _ _ T_White }
+  '\t'     { Token _ _ T_Tab }
+  tok      { Token _ _ _ } 
 
 %%
-prog  : {- empty -}                              { [] }
-	line prog		                 { $1 : $2 }
-	blankline prog		                 { $2 }
 
-blankline : '\n'                                 {  }
-          | whitespace '\n'                {  }
+prog  : {- empty -}                                { [] }
+      | line prog		                   { $1 : $2 }
 
-line : whitespace statement '\n'           { Line $1 $2 }
-     | whitespace statement_list '\n'      { LineList $1 $2 }
+line : whitespace stm_list '\n'                    { LineList $1 $2 }
 
-statement_list : statement ';' statement_list { $1 : $3 }
-	       | statement '\n' 
-	       | statement ';' 
+whitespace : ' ' whitespace                        { 1 + $2 }
+           | '\t' whitespace                       { 4 + $2 }
+           | {- empty -}                           { 0 }
 
-paren_block : statement_block
-	    | 
-statement : 
+stm_list : stm                                     { [$1] }
+	 | stm ';' stm_list                        { $1 : $2 }
+         | stm ';'                                 { [ $1 ] }
+	 
+stm : '(' stm_z ')' stm                            { Stm $1 $2 $3 $4 }
+    | '{' stm_z '}' stm                            { Stm $1 $2 $3 $4 }
+    | tok stm                                      { Tk_l $1 $2 }
 
-
-
-
+stm_z : '(' stm_z ')' stm_z                        { Stm $1 $2 $3 $4 }
+      | '{' stm_z '}' stm_z                        { Stm $1 $2 $3 $4 }
+      | tok stm_z                                  { Tk_l $1 $2 }
+      | '\n' stm_z                                 { $2 }
+      | {- -}                                      { Empty }
 
 {
-data Line = Line Int Stm
-     	  | LineList Int [Stm] 
+  
+parseError tokens = Left ERROR { 
+  errorMesg = "Problem while parsing" ,
+  errorData = tokens 
+  }
 
-type Stm = [Token]
+data Line = Line Int [Stm]
 
-parseError tokens = Left "Error"
+data Stm = Stm Token Stm Token Stm
+         | Tk_l Token Stm
+	 | Empty
 }
 
-{-
-
-f = (x, y)
-   x = 5
-   y = 6
-   map((x,y) 
-     z = x * y ;
-     z, list)
-   x = (5 * 6 + 4 
-   * x *z)
-       
-
--}

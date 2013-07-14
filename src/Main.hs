@@ -1,6 +1,6 @@
 import MoofParse
 import MoofLexer
-
+import System.IO
 
 
 main = do
@@ -9,4 +9,7 @@ main = do
   print tokens
   let parse_tree = moofParse tokens
   print parse_tree
+  
+
+  
 
