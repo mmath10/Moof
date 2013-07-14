@@ -1,3 +1,5 @@
+module PostIndent where 
+
 import IndentParse
 import MoofLexer
 
@@ -18,7 +20,6 @@ stmToTokens stms tks = foldr accumflatStm tks stms
 data ILine = LineI Int [Token]
            | LineR
            | LineL
-
 
 --Map the remaining indents on the stack to indents
 insertIndents [] cols = [LineR | x <- cols]
@@ -43,7 +44,7 @@ addIndents :: [Line] -> [ILine]
 addIndents [] = []
 addIndents (tk:tks) = insertIndents tk [1] tk
 
-data IToken = 
+data IType = 
   I_Name            |
   I_TName	    |
   I_Assignment      |
@@ -58,12 +59,15 @@ data IToken =
   I_LCurly	    |
   I_RCurly	    |
   I_Comma           |
-  I_LineEnd         |
-  L_Indent          |
-  R_Indent          |
   I_Colon           |
-  I_ERROR
+  I_SemiColon
   deriving (Eq,Show)	
+
+data PToken = PToken AlexPosn String IType 
+            | L_Indent 
+            | R_Indent 
+            | Endl
+              
 
 --Function to map lexer tokens to the tokens that the
 --parser will recieve
@@ -82,13 +86,18 @@ iTran I_LCurly = T_LCurly
 iTran I_RCurly = T_RCurly
 iTran I_Comma = T_Comma
 iTran I_Colon = T_Colon
+iTran I_SemiColon = T_SemiColon
 
+tokToItok (Token p s t) = PToken p s (iTran t)
+
+--Convert the Iline with the indentation information to 
+--a stream of tokens
 accumLines :: ILine -> [IToken] -> [IToken]
 accumLines LineR tks = L_Indent : tks
 accumLines LineL tks = R_Indent : tks
-accumLines (LineI i ltk) tks = foldr cnv tks ltks
+accumLines (LineI i ltk) tks = foldr cnv (Endl:tks) ltks
   where
-    cnv tcv tapp = (iTran tcv) : tapp
+    cnv tcv tapp = (tokToItok tcv) : tapp
 
 toParse :: [ILine] -> [IToken]
 toParse strm = foldr accumLines [] strm
@@ -104,3 +113,4 @@ moofIParse tokens = do
   let indented_lines = insertIndents lines
   --Convert the lines back to a token stream for the parser
   toParse indented_lines
+

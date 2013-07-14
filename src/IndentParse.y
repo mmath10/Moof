@@ -9,7 +9,6 @@ import MoofLexer
 %error { parseError }
 
 %token
-  ';'      { Token _ _ T_SemiColon }
   '('      { Token _ _ T_LParen }
   ')'      { Token _ _ T_RParen } 
   '{'      { Token _ _ T_LCurly }
@@ -24,16 +23,12 @@ import MoofLexer
 prog  : {- empty -}                                { [] }
       | line prog		                   { $1 : $2 }
 
-line : whitespace stm_list '\n'                    { LineList $1 $2 }
+line : whitespace stm '\n'                         { Line $1 $2 }
 
 whitespace : ' ' whitespace                        { 1 + $2 }
            | '\t' whitespace                       { 4 + $2 }
            | {- empty -}                           { 0 }
 
-stm_list : stm                                     { [$1] }
-	 | stm ';' stm_list                        { $1 : $2 }
-         | stm ';'                                 { [ $1 ] }
-	 
 stm : '(' stm_z ')' stm                            { Stm $1 $2 $3 $4 }
     | '{' stm_z '}' stm                            { Stm $1 $2 $3 $4 }
     | tok stm                                      { Tk_l $1 $2 }
@@ -51,7 +46,9 @@ parseError tokens = Left ERROR {
   errorData = tokens 
   }
 
-data Line = Line Int [Stm]
+data LineList = LineList Int [Stm]
+
+
 
 data Stm = Stm Token Stm Token Stm
          | Tk_l Token Stm
