@@ -9,6 +9,7 @@ import PostIndent
 %error { parseError }
 
 %token
+  def      { PToken _ _ I_Def }  
   name     { PToken _ _ I_Name }  
   tname    { PToken _ _ I_TName }
   '='      { PToken _ _ I_Assignment }
@@ -37,10 +38,10 @@ line : if expr ':' endl r_in prog l_in                    { If $2 $6}
      | if expr ':' endl r_in prog l_in elseB              { Ifs $2 $6 $8}
      | if expr ':' expr_list endl                         { If $2 $4 }
      | if expr ':' expr_list endl elseB                   { Ifs $2 $4 $6 }
-     | name '(' ')' ':' expr_list endl                    { FuncDef $1 [] $5 }
-     | name '(' ')' ':' r_in prog l_in                    { FuncDef $1 [] $6 }
-     | name '(' arg_list ')' ':' expr_list endl           { FuncDef $1 $3 $6 }
-     | name '(' arg_list ')' ':' r_in prog l_in           { FuncDef $1 $3 $7 }
+     | def name '(' ')' ':' expr_list endl                { FuncDef $2 [] $6 }
+     | def name '(' ')' ':' r_in prog l_in                { FuncDef $2 [] $7 }
+     | def name '(' arg_list ')' ':' expr_list endl       { FuncDef $2 $4 $7 }
+     | def name '(' arg_list ')' ':' r_in prog l_in       { FuncDef $2 $4 $8 }
      | expr_list endl                                     { $1 }
 
 elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
@@ -63,7 +64,6 @@ term : '(' ')' ':'  expr                                  { FDef [] $4 }
      | expr '(' ')'                                       { FCall $1 [] }
      | expr '(' args ')'                                  { FCall $1 $3 }	
      | '{' args '}'                                       { Tuple $2 } 
-     | expr '[' expr ']'                                  { Index $1 $3 }
      | name                                               { Literal $1 }
      | string 	                                          { Literal $1 }
      | bool 				                  { Literal $1 }
