@@ -89,15 +89,13 @@ moofScanTokens str = tabsToSpaces space_num (go (alexStartPos,'\n',[],str))
 checkLexErrors :: [Token] -> Either (ErrorReport [Token]) [Token]
 checkLexErrors tks = mapM checkError tks
   where
-    checkError (Token (AlexPn _ lin col) ipStr T_ERROR) AlexError = 
-      Left ErrorReport {
+    checkError (Token (AlexPn _ lin col) ipStr T_ERROR) = 
+      Left ERROR {
         errorMesg = ("Unrecognized character: \"" ++ (show (head ipStr)) ++ 
                         "\" at line: " ++ (show lin) ++ 
                         " at column: " ++ (show col) ++ 
                         "\n") ,
-        errorData =  tks,
-        funcName = "checkLexErrors",
-        moduleName = "MoofLexer"
+        errorData =  tks
         }
     checkError tks = Right tks
 

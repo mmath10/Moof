@@ -2,6 +2,7 @@ module PostIndent where
 
 import IndentParse
 import MoofLexer
+import MoofUtils
 
 flattenStm :: Stm -> [Token]
 flattenStm statement = accumflatStm statement []
@@ -76,7 +77,7 @@ iTran I_TName = T_Name
 iTran I_Assignment = T_Assignment
 iTran I_Integer = T_Integer
 iTran I_Bool = T_Bool 
-iTran I_If = T_if
+iTran I_If = T_If
 iTran I_Elif = T_Elif
 iTran I_Else = T_Else  
 iTran I_LParen = T_LParen
@@ -92,20 +93,20 @@ tokToItok (Token p s t) = PToken p s (iTran t)
 
 --Convert the Iline with the indentation information to 
 --a stream of tokens
-accumLines :: ILine -> [IToken] -> [IToken]
+accumLines :: ILine -> [PToken] -> [PToken]
 accumLines LineR tks = L_Indent : tks
 accumLines LineL tks = R_Indent : tks
-accumLines (LineI i ltk) tks = foldr cnv (Endl:tks) ltks
+accumLines (LineI i ltk) tks = foldr cnv (Endl:tks) ltk
   where
     cnv tcv tapp = (tokToItok tcv) : tapp
 
-toParse :: [ILine] -> [IToken]
+toParse :: [ILine] -> [PToken]
 toParse strm = foldr accumLines [] strm
 
 --Pass in a stream of Tokens from the lexer
 --and get out a stream of tokens with indentation
 --delimineters
-moofIParse :: [Token] -> Either (ErrorReport [Token]) [IToken]
+moofIParse :: [Token] -> Either (ErrorReport [Token]) [PToken]
 moofIParse tokens = do
   --Tokens are parsed by IndentParse.y
   lines <- indentParse tokens

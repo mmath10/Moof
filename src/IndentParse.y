@@ -1,11 +1,12 @@
 {
 module IndentParse where
 import MoofLexer
+import MoofUtils
 }
 %name indentParse
 
 %tokentype { Token }
-%monad { Either ErrorReport } { (>>=) } { return }
+%monad { Either (ErrorReport [Token]) } { (>>=) } { return }
 %error { parseError }
 
 %token
@@ -44,9 +45,9 @@ stm_z : '(' stm_z ')' stm_z                        { Stm $1 $2 $3 $4 }
 parseError tokens = Left ERROR { 
   errorMesg = "Problem while parsing" ,
   errorData = tokens 
-  }
+}
 
-data LineList = LineList Int [Stm]
+data Line = Line Int Stm
 
 
 

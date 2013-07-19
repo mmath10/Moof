@@ -26,6 +26,7 @@ import PostIndent
   ','      { PToken _ _ I_Comma }
   ':'      { PToken _ _ I_Colon }
   ';'      { PToken _ _ I_SemiColon }
+  '\\'     { PToken _ _ I_Slash }
    r_in    { R_Indent }
    l_in    { L_Indent }
    endl    { I_LineEnd }
@@ -38,8 +39,6 @@ line : if expr ':' endl r_in prog l_in                    { If $2 $6}
      | if expr ':' endl r_in prog l_in elseB              { Ifs $2 $6 $8}
      | if expr ':' expr_list endl                         { If $2 $4 }
      | if expr ':' expr_list endl elseB                   { Ifs $2 $4 $6 }
-     | def name '(' ')' ':' expr_list endl                { FuncDef $2 [] $6 }
-     | def name '(' ')' ':' r_in prog l_in                { FuncDef $2 [] $7 }
      | def name '(' arg_list ')' ':' expr_list endl       { FuncDef $2 $4 $7 }
      | def name '(' arg_list ')' ':' r_in prog l_in       { FuncDef $2 $4 $8 }
      | expr_list endl                                     { $1 }
@@ -56,15 +55,14 @@ expr_list : expr ';' expr_list                            { (Expr $1) : $3 }
 	  | decl                                          { [$1] }
 	  | decl ';'                                      { [$1] }
 
-expr :  '(' expr ')'                                      { $2 }
+expr : '(' expr ')'                                      { $2 }
      | term                                               { $1 }
 
-term : '(' ')' ':'  expr                                  { FDef [] $4 }
-     | '(' arg_list ')' ':'  expr                         { FDef $2 $5 }	
-     | expr '(' ')'                                       { FCall $1 [] }
-     | expr '(' args ')'                                  { FCall $1 $3 }	
+term : name                                               { Literal $1 }
+     | expr '(' args ')'                                  { FCall $1 $3 } 
      | '{' args '}'                                       { Tuple $2 } 
-     | name                                               { Literal $1 }
+     | '\\' '(' arg_list')' ':' expr                       { FDef $3 $6 }	
+     | expr '(' ')'                                       { FCall $1 [] }
      | string 	                                          { Literal $1 }
      | bool 				                  { Literal $1 }
      | int 				                  { Literal $1 } 
@@ -74,8 +72,11 @@ decl : name '=' expr                                      { Decl $1 $3 }
 args : expr                                               { [$1] }
      | expr ',' args                                      { $1 : $3 }
 
-arg_list : name ',' arg_list                              { $1 : $3 }
-         | name                                           { $1 }
+arg_list :{--}                                            { [] }
+	 | a_list                                         { $1 }
+
+a_list : name ',' a_list                                  { $1 : $3 }
+       | name                                             { [$1] }
 
 {
 
