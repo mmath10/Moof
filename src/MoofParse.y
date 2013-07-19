@@ -1,75 +1,100 @@
 {
 module MoofParse where
-import IndentParse
+import PostIndent
 }
 %name moofParse
 
-%tokentype { Token }
-
-
-%monad { Maybe } { (>>=) } { return }
+%tokentype { IToken }
+%monad { Either String } { (>>=) } { return }
 %error { parseError }
 
 %token
-  name    { Token _ _ T_Name }  
-  '='      { Token _ _ T_Assignment }
-  int      { Token _ _ T_Integer }
-  bool     { Token _ _ T_Bool }
-  if       { Token _ _ T_If }
-  else     { Token _ _ T_Else } 
-  '('      { Token _ _ T_LParen }
-  ')'      { Token _ _ T_RParen } 
-  string   { Token _ _ T_String }
-  ','      { Token _ _ T_Comma }
-  ';'      { Token _ _ T_SemiColon }
-  '{'      { Token _ _ T_LCurly }
-  '}'      { Token _ _ T_RCurly }
-  '['      { Token _ _ T_LBracket }
-  ']'      { Token _ _ T_RBracket }
-
-%nonassoc THEN 
-%nonassoc else
+  name     { PToken _ _ I_Name }  
+  tname    { PToken _ _ I_TName }
+  '='      { PToken _ _ I_Assignment }
+  int      { PToken _ _ I_Integer }
+  bool     { PToken _ _ I_Bool }
+  if       { PToken _ _ I_If }
+  elif     { PToken _ _ I_If }
+  else     { PToken _ _ I_Else } 
+  '('      { PToken _ _ I_LParen }
+  ')'      { PToken _ _ I_RParen } 
+  string   { PToken _ _ I_String }
+  '{'      { PToken _ _ I_LCurly }
+  '}'      { PToken _ _ I_RCurly }
+  ','      { PToken _ _ I_Comma }
+  ':'      { PToken _ _ I_Colon }
+  ';'      { PToken _ _ I_SemiColon }
+   r_in    { R_Indent }
+   l_in    { L_Indent }
+   endl    { I_LineEnd }
 
 %%
-prog  : {- empty -}                       { [] }
-      | line prog                  	  { $1 : $2 }   
+prog  : {- empty -}                                       { [] }
+      | line  prog		                          { $1 : $2 }   
 
-scope : line	                          { [$1] }
-      | '{' prog '}'                      { $2 }
+line : if expr ':' endl r_in prog l_in                    { If $2 $6}
+     | if expr ':' endl r_in prog l_in elseB              { Ifs $2 $6 $8}
+     | if expr ':' expr_list endl                         { If $2 $4 }
+     | if expr ':' expr_list endl elseB                   { Ifs $2 $4 $6 }
+     | name '(' ')' ':' expr_list endl                    { FuncDef $1 [] $5 }
+     | name '(' ')' ':' r_in prog l_in                    { FuncDef $1 [] $6 }
+     | name '(' arg_list ')' ':' expr_list endl           { FuncDef $1 $3 $6 }
+     | name '(' arg_list ')' ':' r_in prog l_in           { FuncDef $1 $3 $7 }
+     | expr_list endl                                     { $1 }
 
-line : expr ';'                           { Express $1 }
-     | variableDef ';'                    { $1 }
-     | if '(' expr ')' scope %prec THEN   { If $3 $5 }
-     | if '(' expr ')' scope else scope   { IfE $3 $5 $7 }
+elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
+      | elif expr ':' expr_list endl elseB                { Elif $2 $4 $6 }
+      | else ':' endl r_in prog l_in                      { Else $5 }
+      | else ':' expr_list endl                           { Else $3 }
+ 
+expr_list : expr ';' expr_list                            { (Expr $1) : $3 }
+	  | expr                                          { [Expr $1] }
+	  | expr ';'                                      { [Expr $1] }
+          | decl ';' expr_list                            { $1 : $3 }
+	  | decl                                          { [$1] }
+	  | decl ';'                                      { [$1] }
 
-variableDef : name'=' expr              { Var $1 $3 }
+expr :  '(' expr ')'                                      { $2 }
+     | term                                               { $1 }
 
-expr :  '(' expr ')'                      { $2 }
-     | term                               { $1 }
-
-term : '(' ')' scope                      { FDef [] $3 }
-     | '(' argVar ')' scope               { FDef $2 $4 }	
-     | expr '(' ')'                       { FCall $1 [] }		
-     | expr '(' args ')'                  { FCall $1 $3 }	
-     | '{' args '}'                       { Tuple $2 } 
-     | expr '[' expr ']'                  { Index $1 $3 }
-     | name                               { Literal $1 }
-     | string 				  { Literal $1 }
-     | bool 				  { Literal $1 }
-     | int 				  { Literal $1 } 
+term : '(' ')' ':'  expr                                  { FDef [] $4 }
+     | '(' arg_list ')' ':'  expr                         { FDef $2 $5 }	
+     | expr '(' ')'                                       { FCall $1 [] }
+     | expr '(' args ')'                                  { FCall $1 $3 }	
+     | '{' args '}'                                       { Tuple $2 } 
+     | expr '[' expr ']'                                  { Index $1 $3 }
+     | name                                               { Literal $1 }
+     | string 	                                          { Literal $1 }
+     | bool 				                  { Literal $1 }
+     | int 				                  { Literal $1 } 
      
-argVar : name',' argVar                 { $1 : $3 }
-       | name	                          { [$1] }
-        
-args : expr                               { [$1] }
-     | expr ',' args                      { $1 : $3 }
-	 
+decl : name '=' expr                                      { Decl $1 $3 }
+
+args : expr                                               { [$1] }
+     | expr ',' args                                      { $1 : $3 }
+
+arg_list : name ',' arg_list                              { $1 : $3 }
+         | name                                           { $1 }
+
 {
 
-data Scope = Var Token Expr
-	   | Express Expr 
-           | If Expr [Scope] 
-     	   | IfE Expr [Scope] [Scope]
+
+data Scope = Decl Name Expr
+	   | Expr Expr
+	   | IfState If
+	   | Function FuncDef
+          deriving (Show, Eq)
+
+data FuncDef = FuncDef Name [Token] [Scope] 
+               deriving (Show, Eq)
+
+data If =  Ifs Expr [Scope] Else
+        |  If  Expr [Scope] 
+          deriving (Show, Eq)	
+
+data Else =  Elif Expr [Scope] Else
+	   | Else [Scope]
            deriving (Show, Eq)
 
 data Expr = FDef [Token] [Scope]
@@ -79,5 +104,5 @@ data Expr = FDef [Token] [Scope]
 	  | Literal Token
           deriving (Show, Eq)
 
-parseError tokens = Nothing
+parseError tokens = Left "Moof is crying in her lonely corner. Feel BAD"
 }
