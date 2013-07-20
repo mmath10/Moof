@@ -36,7 +36,7 @@ tokens :-
     "\n"			       { mkT T_NewLine }
     "\r"			       { mkT T_NewLine }
     ":"                                { mkT T_Colon }
-    "\\"                               { mkT T_Slash }
+    \\                                 { mkT T_Slash }
     
 {
 
