@@ -11,7 +11,7 @@ import PostIndent
 %token
   def      { PToken _ _ I_Def }  
   name     { PToken _ _ I_Name }  
-  tname    { PToken _ _ I_TName }
+--  tname    { PToken _ _ I_TName }
   '='      { PToken _ _ I_Assignment }
   int      { PToken _ _ I_Integer }
   bool     { PToken _ _ I_Bool }
@@ -30,6 +30,8 @@ import PostIndent
    r_in    { R_Indent }
    l_in    { L_Indent }
    endl    { I_LineEnd }
+
+%left ':'
 
 %%
 prog  : {- empty -}                                       { [] }
@@ -55,13 +57,13 @@ expr_list : expr ';' expr_list                            { (Expr $1) : $3 }
 	  | decl                                          { [$1] }
 	  | decl ';'                                      { [$1] }
 
-expr : '(' expr ')'                                      { $2 }
+expr : '(' expr ')'                                       { $2 }
      | term                                               { $1 }
 
 term : name                                               { Literal $1 }
+     | '\\' arg_list ':' '{' expr_list '}'         { FDef $3 $6 } 
      | expr '(' args ')'                                  { FCall $1 $3 } 
      | '{' args '}'                                       { Tuple $2 } 
-     | '\\' '(' arg_list')' ':' expr                       { FDef $3 $6 }	
      | expr '(' ')'                                       { FCall $1 [] }
      | string 	                                          { Literal $1 }
      | bool 				                  { Literal $1 }
