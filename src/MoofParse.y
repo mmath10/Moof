@@ -4,7 +4,7 @@ import PostIndent
 }
 %name moofParse
 
-%tokentype { IToken }
+%tokentype { PToken }
 %monad { Either String } { (>>=) } { return }
 %error { parseError }
 
@@ -29,13 +29,12 @@ import PostIndent
   '\\'     { PToken _ _ I_Slash }
    r_in    { R_Indent }
    l_in    { L_Indent }
-   endl    { I_LineEnd }
-
-%left ':'
+   endl    { Endl }
 
 %%
 prog  : {- empty -}                                       { [] }
       | line  prog		                          { $1 : $2 }   
+      | expr_list endl prog                               { $1 ++ $3 }
 
 line : if expr ':' endl r_in prog l_in                    { If $2 $6}
      | if expr ':' endl r_in prog l_in elseB              { Ifs $2 $6 $8}
@@ -43,7 +42,7 @@ line : if expr ':' endl r_in prog l_in                    { If $2 $6}
      | if expr ':' expr_list endl elseB                   { Ifs $2 $4 $6 }
      | def name '(' arg_list ')' ':' expr_list endl       { FuncDef $2 $4 $7 }
      | def name '(' arg_list ')' ':' r_in prog l_in       { FuncDef $2 $4 $8 }
-     | expr_list endl                                     { $1 }
+
 
 elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
       | elif expr ':' expr_list endl elseB                { Elif $2 $4 $6 }
@@ -61,10 +60,9 @@ expr : '(' expr ')'                                       { $2 }
      | term                                               { $1 }
 
 term : name                                               { Literal $1 }
-     | '\\' arg_list ':' '{' expr_list '}'         { FDef $3 $6 } 
+     | '\\' arg_list ':' '{' expr_list '}'                { FDef $2 $5 } 
      | expr '(' args ')'                                  { FCall $1 $3 } 
      | '{' args '}'                                       { Tuple $2 } 
-     | expr '(' ')'                                       { FCall $1 [] }
      | string 	                                          { Literal $1 }
      | bool 				                  { Literal $1 }
      | int 				                  { Literal $1 } 
@@ -81,31 +79,24 @@ a_list : name ',' a_list                                  { $1 : $3 }
        | name                                             { [$1] }
 
 {
-
-
-data Scope = Decl Name Expr
-	   | Expr Expr
-	   | IfState If
-	   | Function FuncDef
-          deriving (Show, Eq)
-
-data FuncDef = FuncDef Name [Token] [Scope] 
-               deriving (Show, Eq)
-
-data If =  Ifs Expr [Scope] Else
-        |  If  Expr [Scope] 
-          deriving (Show, Eq)	
+data Scope = Decl PToken Expr
+           | Expr Expr
+           | FuncDef PToken [PToken] [Scope] 
+           | Ifs Expr [Scope] Else
+           | If  Expr [Scope] 
+  deriving (Show, Eq)	
 
 data Else =  Elif Expr [Scope] Else
 	   | Else [Scope]
-           deriving (Show, Eq)
+  deriving (Show, Eq)
 
-data Expr = FDef [Token] [Scope]
+data Expr = FDef [PToken] [Scope]
 	  | FCall Expr [Expr]
 	  | Tuple [Expr]
 	  | Index Expr Expr
-	  | Literal Token
-          deriving (Show, Eq)
+	  | Literal PToken
+  deriving (Show, Eq)
 
 parseError tokens = Left "Moof is crying in her lonely corner. Feel BAD"
 }
+

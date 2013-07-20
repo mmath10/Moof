@@ -13,6 +13,7 @@ $alpha = [a-zA-Z]
 
 tokens :-
     "//".*                             ;
+    "def"			       { mkT T_Def }
     "True"                             { mkT T_Bool }
     "False"                            { mkT T_Bool }
     "if"                               { mkT T_If }
@@ -35,11 +36,13 @@ tokens :-
     "\n"			       { mkT T_NewLine }
     "\r"			       { mkT T_NewLine }
     ":"                                { mkT T_Colon }
+    "\\"                               { mkT T_Slash }
     
 {
 
 -- The token type:
 data TokType =    
+     T_Def             |
      T_Name	       |
      T_TName	       |
      T_Assignment      |
@@ -59,6 +62,7 @@ data TokType =
      T_White	       |
      T_NewLine	       |
      T_Tab	       |
+     T_Slash           |
      T_ERROR
      deriving (Eq,Show)	
 
