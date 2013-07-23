@@ -10,10 +10,10 @@ flattenStm statement = accumflatStm statement []
 
 accumflatStm :: Stm -> [Token] -> [Token]
 accumflatStm (Stm tk1 stm1 tk2 stm2) tks = 
-  let left = accumflatStm stm1 (tk1 : tks)
-      right = accumflatStm stm2 (tk2 : left)
+  let left = tk2 : accumflatStm stm2 tks
+      right = tk1 : accumflatStm stm1 left
   in right
-accumflatStm (Tk_l tk stm) tks = tk : (accumflatStm stm tks)
+accumflatStm (Tk_l tk stm) tks = tk : accumflatStm stm tks
 accumflatStm Empty tks = tks
 {-
 stmToTokens :: [Stm] -> [Token] -> [Token]
@@ -25,7 +25,7 @@ data ILine = LineI Int [Token]
            | LineL
 
 --Map the remaining indents on the stack to indents
-insertIndents [] cols = [LineR | x <- cols]
+insertIndents [] (col:cols) = [LineR | x<-cols]
 insertIndents ((Line i stm):ls) (ct:cts) 
   --if the line is indented more than the last one 
   | i > ct = 
@@ -42,7 +42,7 @@ insertIndents ((Line i stm):ls) (ct:cts)
 
 addIndents :: [Line] -> [ILine]
 addIndents [] = []
-addIndents tks = insertIndents tks  [1] 
+addIndents tks = insertIndents tks  [0] 
 
 data IType = 
   I_Def             |
@@ -97,8 +97,8 @@ tokToItok (Token p s t) = PToken p s (iTran t)
 --Convert the Iline with the indentation information to 
 --a stream of tokens
 accumLines :: ILine -> [PToken] -> [PToken]
-accumLines LineR tks = L_Indent : tks
-accumLines LineL tks = R_Indent : tks
+accumLines LineR tks = R_Indent : tks
+accumLines LineL tks = L_Indent : tks
 accumLines (LineI i ltk) tks = foldr cnv (Endl:tks) ltk
   where
     cnv tcv tapp = (tokToItok tcv) : tapp

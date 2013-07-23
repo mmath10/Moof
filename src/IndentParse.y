@@ -17,13 +17,13 @@ import MoofUtils
   '\n'     { Token _ _ T_NewLine }
   ' '      { Token _ _ T_White }
   '\t'     { Token _ _ T_Tab }
-  tok      { Token _ _ _} 
+  tok      { Token _ _ _ } 
 
 %%
 
-prog  : {- empty -}                                { [] }
-      | whitespace stm                             { [Line $1  $2] }
+prog  : whitespace stm                             { [Line $1  $2] }
       | whitespace stm '\n' prog                   { (Line $1 $2) : $4}
+      | error                                      { [Line 10000 Empty] }
 
 whitespace : ' ' whitespace                        { 1 + $2 }
            | '\t' whitespace                       { 4 + $2 }

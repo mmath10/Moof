@@ -32,8 +32,8 @@ tokens :-
     \" .* \"                           { mkT T_String }
     ";"				       { mkT T_SemiColon }
     " "			               { mkT T_White }
-    "\t"			       { mkT T_Tab }
-    "\n"			       { mkT T_NewLine }
+    \t	         		       { mkT T_Tab }
+    \n        			       { mkT T_NewLine }
     "\r"			       { mkT T_NewLine }
     ":"                                { mkT T_Colon }
     \\                                 { mkT T_Slash }
@@ -66,11 +66,8 @@ data TokType =
      T_ERROR
      deriving (Eq,Show)	
 
-data Token = Token { 
-       tokenAlxPos::AlexPosn
-     , tokenText::String 
-     , tokenType::TokType      
-}  deriving (Eq, Show)
+data Token = Token AlexPosn String TokType      
+     deriving (Eq, Show)
 
 mkT t p s = Token p s t
 
