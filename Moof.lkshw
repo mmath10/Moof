@@ -1,10 +1,14 @@
 Version of workspace file format:
-               1
+               2
 Time of storage:
-               "Wed Jul 24 00:21:51 EDT 2013"
+               "Wed Jul 24 15:08:37 EDT 2013"
 Name of the workspace:
                "Moof"
 File paths of contained packages:
                ["Moof.cabal"]
 Maybe file path of an active package:
                Just "Moof.cabal"
+Maybe name of an active executable:
+               Nothing
+Version Control System configurations for packages:
+               fromList []

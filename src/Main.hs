@@ -26,10 +26,7 @@ import qualified PostIndent as PI
 file_list = [ "Test/Indent/func_Call.mf",
           "Test/Indent/func.mf",
           "Test/Indent/if.mf",
-          "Test/Indent/multiLine.mf"
-          ]
-
-
+          "Test/Indent/multiLine.mf"]
 
 outputPretifier (PI.PToken _ str _) = str ++ " "
 outputPretifier PI.L_Indent = "["
@@ -48,3 +45,29 @@ main = mapM_ (\x->x) $ do
     case itoks of
       Right x -> putStrLn (concat (map outputPretifier x))
       Left y -> print y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,7 +6,6 @@ license: LGPL-3
 license-file: LICENSE
 maintainer: micmath@udel.edu
 synopsis: A toy language hopefully to have structured typing
-description:  
 category: Language
 author: mmath10
 data-dir: ""
@@ -17,7 +16,8 @@ executable IndentTest
     buildable: True
     build-tools: alex -any, happy -any
     hs-source-dirs: src
-    other-modules: MoofLexer MoofUtils PostIndent IndentParse MoofParse
+    other-modules: SymbolTables MoofLexer MoofUtils PostIndent
+                   IndentParse MoofParse
  
 executable Moof
     build-depends: HUnit -any, array ==0.4.*, base >=4.5
@@ -25,5 +25,6 @@ executable Moof
     buildable: True
     build-tools: alex -any, happy -any
     hs-source-dirs: src
-    other-modules: MoofLexer MoofUtils PostIndent IndentParse MoofParse
+    other-modules: SymbolTables MoofLexer MoofUtils PostIndent
+                   IndentParse MoofParse
  
