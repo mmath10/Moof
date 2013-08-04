@@ -9,15 +9,18 @@ import PostIndent
 %error { parseError }
 
 %token
-  def      { PToken _ _ I_Def }
+  if       { PToken _ "if" I_Name }
+  elif     { PToken _ "elif" I_Name }
+  else     { PToken _ "else" I_Name }
+  for      { PToken _ "for" I_Name }
+  in       { PToken _ "in" I_Name }
+  while    { PToken _ "while" I_Name }
+  def      { PToken _ "def" I_Name }
   name     { PToken _ _ I_Name }
---  tname    { PToken _ _ I_TName }
+  tname    { PToken _ _ I_TName }
   '='      { PToken _ _ I_Assignment }
   int      { PToken _ _ I_Integer }
   bool     { PToken _ _ I_Bool }
-  if       { PToken _ _ I_If }
-  elif     { PToken _ _ I_If }
-  else     { PToken _ _ I_Else }
   '('      { PToken _ _ I_LParen }
   ')'      { PToken _ _ I_RParen }
   string   { PToken _ _ I_String }
@@ -33,70 +36,70 @@ import PostIndent
 
 %%
 prog  : {- empty -}                                       { [] }
-      | line  prog		                          { $1 : $2 }
-      | expr_list endl prog                               { $1 ++ $3 }
+      | line  prog                                        { $1 : $2 }
 
-line : if expr ':' endl r_in prog l_in                    { If $2 $6}
-     | if expr ':' endl r_in prog l_in elseB              { Ifs $2 $6 $8}
-     | if expr ':' expr_list endl                         { If $2 $4 }
-     | if expr ':' expr_list endl elseB                   { Ifs $2 $4 $6 }
-     | def name '(' arg_list ')' ':' expr_list endl       { FuncDef $2 $4 $7 }
-     | def name '(' arg_list ')' ':' r_in prog l_in       { FuncDef $2 $4 $8 }
-
+line : if expr ':' endl r_in prog l_in                    { If $2 $6 Endif }
+     | if expr ':' endl r_in prog l_in elseB              { If $2 $6 $8 }
+     | if expr ':' expr endl                              { If $2 $4 Endif }
+     | if expr ':' expr endl elseB                        { If $2 $4 Endif }
+     | while expr ':' r_in prog l_in                      { While $2 $5}
+     | def name '(' arg_list ')' ':' expr endl            { FuncDef $2 $4 $7 }
+     | def name '('  arg_list ')' ':' r_in prog l_in      { FuncDef $2 $4 $8 }
+     | name '=' expr endl                                 { MVar $1 $3 }
+     | expr endl                                          { Express $1 }
 
 elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
-      | elif expr ':' expr_list endl elseB                { Elif $2 $4 $6 }
+      | elif expr ':' expr endl elseB                     { Elif $2 $4 $6 }
       | else ':' endl r_in prog l_in                      { Else $5 }
-      | else ':' expr_list endl                           { Else $3 }
+      | else ':' expr endl                                { Else $3 }
 
-expr_list : expr ';' expr_list                            { (Expr $1) : $3 }
-          | expr                                          { [Expr $1] }
-          | expr ';'                                      { [Expr $1] }
-          | decl ';' expr_list                            { $1 : $3 }
-          | decl                                          { [$1] }
-          | decl ';'                                      { [$1] }
+expr : '\\' arg_list ':'  expr2                            { Lambda $2 $4 }
+     | expr2                                               { $1 }
 
-expr : '(' expr ')'                                       { $2 }
-     | term                                               { $1 }
+expr2 :  term '(' args ')'                                { FCall $1 $3 }
+      | term                                              { $1 }
 
 term : name                                               { Literal $1 }
-     | '\\' arg_list ':' '{' expr_list '}'                { FDef $2 $5 }
-     | expr '(' args ')'                                  { FCall $1 $3 }
      | '{' args '}'                                       { Tuple $2 }
      | string                                             { Literal $1 }
      | bool                                               { Literal $1 }
      | int                                                { Literal $1 }
+     | '(' expr ')'                                       { $2 }
 
-decl : name '=' expr                                      { Decl $1 $3 }
 
 args : expr                                               { [$1] }
      | expr ',' args                                      { $1 : $3 }
 
-arg_list : {--}                                            { [] }
+arg_list : {--}                                           { [] }
          | a_list                                         { $1 }
 
 a_list : name ',' a_list                                  { $1 : $3 }
        | name                                             { [$1] }
 
 {
-data Scope = Decl PToken Expr
-           | Expr Expr
-           | FuncDef PToken [PToken] [Scope]
-           | Ifs Expr [Scope] Else
-           | If  Expr [Scope]
+
+type Scope = [Line]
+
+data Line =  Express Expr
+           | FuncDef PToken [PToken] Scope
+           | While Expr Scope
+           | If Expr Scope Else
+           | MVar PToken Expr
   deriving (Show, Eq)
 
-data Else =  Elif Expr [Scope] Else
-         | Else [Scope]
+
+data Else =  Elif Expr Scope Else
+          |  Else Scope
+          |  Endif
   deriving (Show, Eq)
 
-data Expr = FDef [PToken] [Scope]
+data Expr = Lambda [PToken] Expr
           | FCall Expr [Expr]
           | Tuple [Expr]
-          | Index Expr Expr
           | Literal PToken
   deriving (Show, Eq)
 
 parseError tokens = Left "Moof is crying in her lonely corner. Feel BAD"
+
 }
 

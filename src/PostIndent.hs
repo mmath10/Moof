@@ -39,15 +39,11 @@ addIndents [] = []
 addIndents tks = insertIndents tks  [0]
 
 data IType =
-  I_Def             |
   I_Name            |
   I_TName           |
   I_Assignment      |
   I_Integer         |
   I_Bool            |
-  I_If              |
-  I_Elif            |
-  I_Else            |
   I_LParen          |
   I_RParen          |
   I_String          |
@@ -73,9 +69,6 @@ iTran T_TName = I_Name
 iTran T_Assignment = I_Assignment
 iTran T_Integer = I_Integer
 iTran T_Bool = I_Bool
-iTran T_If = I_If
-iTran T_Elif = I_Elif
-iTran T_Else = I_Else
 iTran T_LParen = I_LParen
 iTran T_RParen = I_RParen
 iTran T_String = I_String
@@ -84,7 +77,6 @@ iTran T_RCurly = I_RCurly
 iTran T_Comma = I_Comma
 iTran T_Colon = I_Colon
 iTran T_SemiColon = I_SemiColon
-iTran T_Def = I_Def
 
 tokToItok (Token p s t) = PToken p s (iTran t)
 

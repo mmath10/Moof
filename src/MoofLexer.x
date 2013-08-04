@@ -13,12 +13,8 @@ $alpha = [a-zA-Z]
 
 tokens :-
     "//".*                             ;
-    "def"			       { mkT T_Def }
     "True"                             { mkT T_Bool }
     "False"                            { mkT T_Bool }
-    "if"                               { mkT T_If }
-    "elif"                             { mkT T_Elif }
-    "else"                             { mkT T_Else}
     "("                                { mkT T_LParen }
     ")"                                { mkT T_RParen }
     "{"   			       { mkT T_LCurly }
@@ -42,15 +38,11 @@ tokens :-
 
 -- The token type:
 data TokType =    
-     T_Def             |
      T_Name	       |
      T_TName	       |
      T_Assignment      |
      T_Integer	       |
      T_Bool            |
-     T_If              |
-     T_Elif            |
-     T_Else            |
      T_LParen          |
      T_RParen          |
      T_String          |
