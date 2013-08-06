@@ -87,7 +87,6 @@ data Line =  Express Expr
            | MVar PToken Expr
   deriving (Show, Eq)
 
-
 data Else =  Elif Expr Scope Else
           |  Else Scope
           |  Endif

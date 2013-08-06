@@ -17,6 +17,8 @@ module SymbolTables where
 import qualified MoofParse as MoofParse
 import qualified IndentParse as IndentParse
 import qualified Data.Map as Map
+import Data.Tree.Zipper
+
 import Control.Monad
 
 --Make pass of parse tree to determine
@@ -80,8 +82,47 @@ checkScope = foldM proc_Line (Map.empty, Map.empty)
         test_Else (Else scp) = foldM proc_Line (fMap, mMap) scp
         test_Else Endif = Right (fMap, mMap)
       in (test_Else else_block)
-{-
-data SymbolTree = SymScope (Map.Map Name  Line [SymbolTree]
 
-constructSymTree 
--}
+
+data SymbolTable = SymbolTable {
+  mMap :: Map.Map Name MoofParse.Line,
+  fMap :: Map.Map Name MoofParse.Line,
+  aMap :: Map.Map Name MoofParse.Line
+  }
+
+
+constructSymTree :: Moof.Scope -> 
+constructSymTree prgscp = let
+  -- Initialize the scope
+  initial_scope = Scope {
+    mMap = Map.empty,
+    fMap = Map.empty,
+    aMap = Map.empty,
+    scpType = GScope,
+    parentScope = 
+    }
+  
+  testExpr (Literal tok@(PToken _ n I_Name)) scp 
+    | (Map.member n (mMap scp) ||
+       Map.member n (fMap scp) ||
+       Map.member n (aMap scp)) = 
+   case  of
+     True -> Right scp
+     False -> Left (n ++ " hasn't been defined previously")
+  
+  testExpr (Lambda args expr) scp = 
+    testExpr expr (foldr addArg fm args, mM)
+      
+  testExpr (FCall e1 es) (fm, mM) = do
+    testExpr e1 (fm, mM)
+    foldM testExpr (fm, mM) es
+    
+  testExpr (Tuple es) (fm, mM) = foldM testExpr (fm, mM) es
+
+
+  match_line scp (Express expr) = testExpr expr scp
+  
+  
+  in foldM match_line initial_scope prgscp
+
+    
