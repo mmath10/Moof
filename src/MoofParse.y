@@ -52,6 +52,7 @@ elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
       | elif expr ':' expr endl elseB                     { Elif $2 $4 $6 }
       | else ':' endl r_in prog l_in                      { Else $5 }
       | else ':' expr endl                                { Else $3 }
+      | {- empty -}                                       { Endif } 
 
 expr : '\\' arg_list ':'  expr2                            { Lambda $2 $4 }
      | expr2                                               { $1 }
