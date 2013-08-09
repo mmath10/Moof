@@ -41,7 +41,7 @@ prog  : {- empty -}                                       { [] }
 line : if expr ':' endl r_in prog l_in                    { If $2 $6 Endif }
      | if expr ':' endl r_in prog l_in elseB              { If $2 $6 $8 }
      | if expr ':' expr endl                              { If $2 $4 Endif }
-     | if expr ':' expr endl elseB                        { If $2 $4 Endif }
+     | if expr ':' expr endl elseB                        { If $2 $4 $6 }
      | while expr ':' r_in prog l_in                      { While $2 $5}
      | def name '(' arg_list ')' ':' expr endl            { FuncDef $2 $4 $7 }
      | def name '('  arg_list ')' ':' r_in prog l_in      { FuncDef $2 $4 $8 }
@@ -52,7 +52,6 @@ elseB : elif expr ':' endl r_in prog l_in elseB           { Elif $2 $6 $8 }
       | elif expr ':' expr endl elseB                     { Elif $2 $4 $6 }
       | else ':' endl r_in prog l_in                      { Else $5 }
       | else ':' expr endl                                { Else $3 }
-      | {- empty -}                                       { Endif } 
 
 expr : '\\' arg_list ':'  expr2                            { Lambda $2 $4 }
      | expr2                                               { $1 }
